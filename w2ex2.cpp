@@ -4,7 +4,7 @@
 #include <random>
 #include <chrono>
 #include <iomanip>
-#include <intrin.h>
+//#include <intrin.h>
 #include <bitset>
 
 typedef uint64_t u64;
