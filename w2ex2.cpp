@@ -4,13 +4,9 @@
 #include <random>
 #include <chrono>
 #include <iomanip>
-//#include <intrin.h>
-#include <bitset>
 
 typedef uint64_t u64;
 
-// visual studio
-//#define popcnt __popcnt64
 // gcc
 #define popcnt __builtin_popcountll 
 
@@ -20,41 +16,51 @@ class SumBitArray {
 private:
 	u64* arr;
 	u64* sums;
+	u64 size;
+	u64 sumsize;
+	u64 suminterval;
 
 public:
-	u64 size;
-
-	SumBitArray(u64 n) {
+	SumBitArray(u64 n, u64 t) {
+		// size of bit array
 		size = n / 64;
 		if (n % 64 != 0) size++;
-
 		arr = new u64[size]();
-		sums = new u64[size]();
+
+		// size of sum support structure
+		sumsize = size / t;
+		sums = new u64[sumsize]();
+
+		suminterval = t;
 	}
 
 	u64 get(u64 i) {
+		// u64 containing value to get
 		u64 num = arr[i / 64];
+		// read the value with a bit mask and return it
 		u64 mask = 1;
 		mask <<= (i % 64);
-
 		return ((num & mask) == 0) ? 0 : 1;
 	}
 
 	void set(u64 i, u64 b) {
+		// u64 containing the position to write to
 		u64 num = arr[i / 64];
+		// set the bit to 0 or 1 with a bit mask
 		u64 mask = 1;
 		mask <<= (i % 64);
 
 		if (b == 0) {
 			num &= ~mask;
-		}
-		else {
+		} else {
 			num |= mask;
 		}
 
+		// save the new u64 to the array
 		arr[i / 64] = num;
 	}
 
+	// sum function using the simple and slow code from the spec
 	u64 naiveSum(u64 i) {
 		u64 s = 0;
 
@@ -65,29 +71,49 @@ public:
 		return s;
 	}
 
+	// generating support strucure for better sum function
 	void generateSums() {
 		u64 total = 0;
 
 		for (u64 i = 0; i < size; i++) {
+			// number of 1-bits in arr[i]
 			total += popcnt(arr[i]);
-			sums[i] = total;
+
+			// if enough u64's have been summed, save current total
+			if ((i + 1) % suminterval == 0) {
+				sums[((i + 1) / suminterval) - 1] = total;
+			}
 		}
 	}
 
 	u64 sum(u64 i) {
+		// helper values
+		u64 bigdiv = (i + 1) / (suminterval * 64);
+		u64 bigmod = (i + 1) % (suminterval * 64);
 		u64 div = (i + 1) / 64;
 		u64 mod = (i + 1) % 64;
 		u64 sum = 0;
 
-		if (div > 0) {
-			sum = sums[div - 1];
+		// use support structure if range to sum is big enough
+		if (bigdiv > 0) {
+			sum = sums[bigdiv - 1];
 		}
 
-		if (mod != 0) {
-			u64 num = arr[div];
-			u64 mask = 0;
-			mask = (~mask) >> (64 - mod);
-			sum += popcnt(num & mask);
+		// add remaining 1-bits to the sum
+		if (bigmod != 0) {
+			// whole u64's
+			for (u64 j = (bigdiv * suminterval); j < div; j++) {
+				u64 num = arr[j];
+				sum += popcnt(num);
+			}
+			
+			// last non-whole u64
+			if (mod != 0) {
+				u64 num = arr[div];
+				u64 mask = 0;
+				mask = (~mask) >> (64 - mod);
+				sum += popcnt(num & mask);
+			}
 		}
 
 		return sum;
@@ -122,36 +148,64 @@ void measureTime(SumBitArray ba, u64 r, int mode) {
 	}
 }
 
+void hundredSums(SumBitArray ba, u64 n) {
+	vector<u64> ints;
+	mt19937 g(random_device{}());
+	uniform_int_distribution<u64> d(0, n - 1);
+	for (u64 i = 0; i < 100; i++) {
+		ints.push_back(d(g));
+	}
+
+	chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
+
+	for (u64 i : ints) {
+		ba.sum(i);
+	}
+
+	chrono::high_resolution_clock::time_point end = chrono::high_resolution_clock::now();
+	chrono::duration<double> dur = chrono::duration_cast<chrono::duration<double>>(end - start);
+
+	cout << fixed << setprecision(9);
+	cout << "time taken: " << dur.count() << " seconds.\n";
+}
+
 void benchmark() {
-	u64 n, m, r;
-	cout << "enter number of bits: ";
+	u64 n, t, m, r;
+	cout << "enter number of bits (n): ";
 	cin >> n;
-	cout << "enter number of bits to set to 1: ";
+	cout << "enter interval of sum pre-generation (t / 64): ";
+	cin >> t;
+	cout << "enter number of bits to set to 1 (m): ";
 	cin >> m;
-	cout << "enter upper limit of range to sum: ";
+	cout << "enter range to sum (i), max n - 1, 0 for a benchmark of 100 random values: ";
 	cin >> r;
 
-	SumBitArray ba(n);
+	SumBitArray ba(n, t);
 
-	vector<int> ints;
+	vector<u64> ints;
 	mt19937 g(random_device{}());
-	uniform_int_distribution<int> d(0, n - 1);
+	uniform_int_distribution<u64> d(0, n - 1);
 	for (u64 i = 0; i < m; i++) {
 		ints.push_back(d(g));
 	}
 
-	for (int i : ints) {
+	for (u64 i : ints) {
 		ba.set(i, 1);
 	};
 
-	cout << "Generating sum support structure\n";
+	cout << "\nGenerating sum support structure\n";
 	measureTime(ba, r, 1);
 
-	cout << "Calculating sum with simple algorithm\n";
-	measureTime(ba, r, 0);
+	if (r == 0) {
+		cout << "\nCalculating 100 sums\n";
+		hundredSums(ba, n);
+	} else {
+		cout << "\nCalculating sum with simple algorithm\n";
+		measureTime(ba, r, 0);
 
-	cout << "Calculating sum with better algorithm\n";
-	measureTime(ba, r, 2);
+		cout << "\nCalculating sum with better algorithm\n";
+		measureTime(ba, r, 2);
+	}
 
 	ba.dealloc();
 }
