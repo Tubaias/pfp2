@@ -17,7 +17,6 @@ private:
 	u64* arr;
 	u64* sums;
 	u64 size;
-	u64 sumsize;
 	u64 suminterval;
 
 public:
@@ -28,7 +27,7 @@ public:
 		arr = new u64[size]();
 
 		// size of sum support structure
-		sumsize = size / t;
+		u64 sumsize = size / t;
 		sums = new u64[sumsize]();
 
 		suminterval = t;
