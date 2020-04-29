@@ -12,11 +12,10 @@ using namespace std;
 class BitArray {
 private:
 	u64* arr;
-	u64 size;
 
 public:
 	BitArray(u64 n) {
-		size = n / 64;
+		u64 size = n / 64;
 		if (n % 64 != 0) size++;
 		arr = new u64[size]();
 	}
