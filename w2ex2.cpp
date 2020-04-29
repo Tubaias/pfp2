@@ -168,14 +168,14 @@ void hundredSums(SumBitArray ba, u64 n) {
 	cout << "time taken: " << dur.count() << " seconds.\n";
 }
 
-void benchmark() {
-	u64 n, t, m, r;
+int main() {
+	u64 n, m, t, r;
 	cout << "enter number of bits (n): ";
 	cin >> n;
-	cout << "enter interval of sum pre-generation (t / 64): ";
-	cin >> t;
 	cout << "enter number of bits to set to 1 (m): ";
 	cin >> m;
+	cout << "enter interval of sum pre-generation (t / 64): ";
+	cin >> t;
 	cout << "enter range to sum (i), max n - 1, 0 for a benchmark of 100 random values: ";
 	cin >> r;
 
@@ -207,10 +207,5 @@ void benchmark() {
 	}
 
 	ba.dealloc();
-}
-
-int main() {
-	benchmark();
-
 	return 0;
 }
