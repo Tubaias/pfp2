@@ -10,13 +10,12 @@ using namespace std;
 class PackedIntegerArray {
 private:
 	u64* arr;
-	u64 size;
 	u64 width;
 
 public:
 	PackedIntegerArray(u64 n, u64 k) {
 		width = k;
-		size = k * n / 64;
+		u64 size = k * n / 64;
 		if ((k * n) % 64 != 0) size++;
 
 		arr = new u64[size]();
