@@ -174,7 +174,7 @@ int main() {
 	cin >> n;
 	cout << "enter number of bits to set to 1 (m): ";
 	cin >> m;
-	cout << "enter interval of sum pre-generation (t / 64): ";
+	cout << "enter interval of sum pre-generation (times 64): ";
 	cin >> t;
 	cout << "enter range to sum (i), max n - 1, 0 for a benchmark of 100 random values: ";
 	cin >> r;
